@@ -1,124 +1,124 @@
 # ComfyUI telegram bot
 
-## Telegram-бот для интеграции ComfyUI
+## Telegram bot for ComfyUI integration
 
-Работают text2image, image2image. Есть поддержка LoRA. Через IPAdapter работает замена лиц, стилизация
+Text2image, image2image work. There is LoRA support. Face replacement, stylization works via IPAdapter
 
-Бот для теста: @stablecats_bot
+Test bot: @stablecats_bot
 
-## Установка и настройка
+## Installation and customization
 
-Необходима рабочая установка ComfyUI с дополнительными модулями:
+A working installation of ComfyUI with additional modules is required:
 
 - ComfyUI-Impact-Pack
 - ComfyUI_UltimateSDUpscale
 
-Необходима также установка моделей для сегментации: *face_yolov8m.pt*
+The installation of models for segmentation is also required: *face_yolov8m.pt*.
 
-Апскейлер: *4xNMKDSuperscale_4xNMKDSuperscale.pt*
+Upscaler: *4xNMKDSuperscale_4xNMKDSuperscale.pt*.
 
-ControlNet модель: *control_v11f1e_sd15_tile.pth*
+ControlNet Model: *control_v11f1e_sd15_tile.pth*
 
-Файл default_lora.safetensors из каталога assets необходимо скопировать в ваш каталог LoRA. Это workaround для workflow без LoRA.
+The default_lora.safetensors file from the assets directory should be copied to your LoRA directory. This is the workaround for the workflow without LoRA.
 
 
-Переименовать файл config.yaml.samlpe в config.yaml и настроить под себя:
+Rename the config.yaml.samlpe file to config.yaml and customize to your liking:
 ```
 network:
-  BOT_TOKEN: 'xxx:xxxxxx' - токен telegram бота
-  SERVER_ADDRESS: "127.0.0.1:8188" - адрес API ComfyUI
+  BOT_TOKEN: 'xxx:xxxxxxxx' - telegram bot token
+  SERVER_ADDRESS: '127.0.0.1:8188' - ComfyUI API address.
 
 bot:
-  TRANSLATE: True - Переводить ли языки промпта на английский (через deep_translate)
-  DENY_MESSAGE: "Access denied" - Сообщение, если пользователь не в белом списке
-  HELP_TEXT: "Для генерации можно использовать текст на русском языке
-По-умолчанию каритнка создаётся в разрешении 512x512 пикселей
-В промпте можно указать размер ШИРИНАхВЫСОТА. Например - 1024x512.
-Команды:
-/upscale .... - создаст картинку высокого разрешения
-/face .... - исправит дефекты лиц"
+  TRANSLATE: True - Whether to translate prompt languages to English (via deep_translate)
+  DENY_MESSAGE: "Access denied" - Message if the user is not on the whitelist.
+  HELP_TEXT: "Russian text can be used for generation.
+By default, the caricature is created in 512x512 pixels resolution.
+In the prompt you can specify the size WIDTHxHIGH. For example - 1024x512.
+Commands:
+/upscale .... - will create a high-resolution picture
+/face .... - corrects facial defects"
 
 comfyui:
-  DEFAULT_MODEL: 'revAnimatedFp16_122.safetensors' - имя модели по-умолчанию
-  DEFAULT_VAE: 'vaeFtMse840000Ema_v10.safetensors' - имя VAE модели по-умолчанию
-  DEFAULT_CONTROLNET: 'control_v11f1e_sd15_tile.pth' - модель ControlNet для image2image
-  SAMPLER: 'uni_pc' - используемый сэмплер
-  SAMPLER_STEPS: 30 - количество шагов денойса
+  DEFAULT_MODEL: 'revAnimatedFp16_122.safetensors' is the default model name
+  DEFAULT_VAE: 'vaeFtMse840000Ema_v10.safetensors' - default VAE model name
+  DEFAULT_CONTROLNET: 'control_v11f1e_sd15_tile.pth' - ControlNet model for image2image
+  SAMPLER: 'uni_pc' - the sampler used
+  SAMPLER_STEPS: 30 - number of denois steps
   MAX_STEPS: 100
   TOKEN_MERGE_RATIO: '0.6'
   CLIP_SKIP: '-1'
   CONTROLNET_STRENGTH: '0.9'
   DEFAULT_WIDTH: 512
   DEFAULT_HEIGHT: 512
-  MAX_WIDTH: 2048 - ограничение ширины     
-  MAX_HEIGHT: 2048 - ограничение высоты
-  BEAUTIFY_PROMPT: ',masterpiece, perfect, small details, highly detailed, best, high quality, professional photo' - добавляется к промпту
-  NEGATIVE_PROMPT: 'low quality, worst quality, embedding:badhandv4, blurred, deformed, embedding:EasyNegative, embedding:badquality, watermark, text, font, signage, artist name, text, caption, jpeg artifacts' - настройте под свои нужды негативный промпт
+  MAX_WIDTH: 2048 - width limit     
+  MAX_HEIGHT: 2048 - height limit
+  BEAUTIFY_PROMPT: ',masterpiece, perfect, small details, highly detailed, best, high quality, professional photo' - added to prompt.
+  NEGATIVE_PROMPT: 'low quality, worst quality, embedding:badhandv4, blurred, deformed, embedding:EasyNegative, embedding:badquality, watermark, text, font, signage, artist name, text, caption, jpeg artifacts' - customize negative prompt to your needs.
 ```
 
-## Описание работы
+## Workflow Description
 
-Используются workflow для генерации, в каталоги workflows они находятся в формате ComfyUI API
+The workflows are used for generation, in the catalogs of workflows they are in ComfyUI API format
 
-По-умолчанию при получении чистого промпта генерируется картинка с размерами DEFAULT_WIDTHxDEFAULT_HEIGHT, размер можно указывать в формате WIDTHxHEIGHT
+By default, when a clean prompt is received, a picture with dimensions DEFAULT_WIDTHxDEFAULT_HEIGHT is generated, the size can be specified in WIDTHxHEIGHT format.
 
-Ответом от бота будут два сообщения: картинка (с потерей качетсва из-за сжатия телеграмом) и PNG файл с исходным качеством.
+The response from the bot will be two messages: a picture (with quality loss due to compression by telegram) and a PNG file with the original quality.
 
-Если боту отправить картинку, то картинка будет преобразована, согласно промпту, в данном случае команды `/face`, `/upscale` также работают. Важно! Для img2img использутеся COntrolNet, а не классический денойс,что позволяет дать максимально приближенный к оригиналу результат.
+If the bot sends a picture, the picture will be converted according to the prompt, in this case `/face`, `/upscale` commands also work. Important! COntrolNet is used for img2img, not classical denois, which allows to give the result as close to the original as possible.
 
-Для добавления своего негативного промпта вместо встроенного - можно добавить к сообщению через разделитель `|`
+To add your own negative prompt instead of the built-in one - you can add `|` separator to the message.
 
-Пример полного промпта (image2image) с отправкой референсной картинки:
+Example of a full prompt (image2image) with sending a reference image:
 
 `@rev #vlozhkin:0.4 $0.6 %50 768x512 /face pretty woman in red|blurred, bad quality`
 
-- `@rev` - выбор модели (revAnimated)
-- `#vlozhkin:0.4` - установка LoRA с силой 0.4
-- `$0.6` - коэффициент ControlNet (0 - нет, 1 - максимум)
-- `%50` - 50 шаков сэмплера
-- `768x512` - разрешение на входе
-- `/face` - улучшение лиц и апсекйл
-- `pretty woman in red` - позитивный промпт
-- `|` - разделитель промптов
-- `blurred, bad quality` - негативный промпт
+- `@rev` - model selection (revAnimated)
+- `#vlozhkin:0.4` - set LoRA with power 0.4
+- `$0.6` - ControlNet coefficient (0 - none, 1 - maximum)
+- `%50` - 50 sampler shaks
+- `768x512` - input resolution
+- `/face` - face enhancement and upsampling
+- `pretty woman in red` - positive prompt.
+- `|` - prompt separator
+- `blurred, bad quality` - negative prompt
 
-## Дополнительные команды
+## Additional commands
 
-`%50` - указать количество шагов сэмплера
+`%50` - specify the number of sampler steps
 
-`$0.5` - strength для image2image controlnet модели
+`$0.5` - strength for image2image controlnet models
 
-`/models` - список моделей
+`/models` - list of models
 
-`/loras` - список доступных LoRA
+`/loras` - list of available LoRAs
 
 
 
-Исходная картинка | Результат
+Original picture | Result
 --- | ---
-![Исходная картинка](https://raw.githubusercontent.com/zlsl/comfyui_telegram_bot/main/examples/i2i_src.jpg) | ![Исходная картинка](https://raw.githubusercontent.com/zlsl/comfyui_telegram_bot/main/examples/i2i_result.jpg) Милый демон с белой змеиной чешуёй, изумрудные глаза, острые когти 1024x1024
+![Source Image](https://raw.githubusercontent.com/zlsl/comfyui_telegram_bot/main/examples/i2i_src.jpg) | ![Source Image](https://raw.githubusercontent.com/zlsl/comfyui_telegram_bot/main/examples/i2i_result.jpg) Cute demon with white snake scales, emerald eyes, sharp claws 1024x1024
 
 
-В каталоге upload сохраняются картинки отправленные боту
+The upload directory stores images sent to the bot
 
-Каталог generated - результаты генераций
+Catalog generated - generation results
 
 
-## Команды
+## Commands
 
-`/start`, `/help` - информация об использовании из HELP_TEXT
+`/start`, `/help` - usage information from HELP_TEXT
 
-`/upscale` - апскейл готовой картинки
+`/upscale` - upscale ready picture
 
-`/face` - коррекциея лиц (каждое лицо на картинке увеличит время генерации)
+`/face` - face correction (each face on the picture will increase generation time)
 
-`/me` - установка фото лица (пустая команда для очистки), можно указать вес лица добавив его к команде. Например /me 0.7
+`/me` - face photo setting (empty command for clearing), you can specify face weight by adding it to the command. For example /me 0.7
 
-`/style` - установка картинки для стилизации (пустая команда для очистки), можно указать вес cnbkz добавив его к команде. Например /style 0.7
+`/style` - setting the picture for styling (empty command for cleaning), you can specify the weight of cnbkz by adding it to the command. For example /style 0.7
 
-## Ограничение доступа
+## Restrict access
 
-Используется whitelist, если whitelist в config.yaml - пустой, то доступ открыт для всех. В список добавляйте telegram uid разрешённых пользователей.
+Whitelist is used, if whitelist in config.yaml is empty, then access is open to everyone. Add telegram uid of allowed users to the list.
 
 ```
 whitelist:
@@ -127,15 +127,15 @@ whitelist:
 ```
 
 
-## Использование LoRA
+## Using LoRA
 
-В config.yaml необходимо добавить свои строки в раздел `loras`. Далее LoRA подключается добавлением в промпт `#имя_LoRA`. Например `#vlozhkin`. Можно указать strength - `#lora_name:0.5`
+In config.yaml, you need to add your lines to the `loras` section. LoRA is then connected by adding `#name_LoRA` to the prompt. For example `#vlozhkin`. You can specify the strength - `#lora_name:0.5`.
 
-Формат строки LoRA: `имя для бота`|`имя файла модели LoRA`|`strength по-умолчанию`|`строка, которая будет добавлена в начало промпта`
+LoRA string format: `bot name`|`loRA model file name`|`strength by default`|`string to be added to the beginning of the prompt`.
 
-Пример:
+Example:
 
 ```
 loras:
-  - 'vlozhkin|vlozhkin3.safetensors|1|vlozhkin style illustration'
+  - ``vlozhkin|vlozhkin3.safetensors|1|vlozhkin style illustration''
 ```
